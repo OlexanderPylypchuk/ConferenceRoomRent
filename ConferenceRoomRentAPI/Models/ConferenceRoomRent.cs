@@ -1,0 +1,16 @@
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace ConferenceRoomRentAPI.Models
+{
+    public class ConferenceRoomRent
+    {
+        public int Id { get; set; }
+        public double FullPrice { get; set; }
+        public DateTime StartOfRent { get; set; }
+        public DateTime EndOfRent { get; set; }
+        [ForeignKey(nameof(ConferenceRoom))]
+        public int ConferenceRoomId { get; set; }
+        public ConferenceRoom ConferenceRoom { get; set;}
+        public List<Utilities> Utilities { get; set; }
+    }
+}
