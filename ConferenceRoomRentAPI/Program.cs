@@ -1,4 +1,6 @@
+using AutoMapper;
 using ConferenceRoomRentAPI.Data;
+using ConferenceRoomRentAPI.MapperConfig;
 using ConferenceRoomRentAPI.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -17,6 +19,10 @@ builder.Services.AddIdentity<AppUser, IdentityRole>().AddEntityFrameworkStores<A
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+IMapper mapper = MapperConfig.RegisterMaps().CreateMapper();
+builder.Services.AddSingleton(mapper);
+builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -31,5 +37,17 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.MapControllers();
-
+ApplyMigrations();
 app.Run();
+void ApplyMigrations() //authomatic migrations
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var _db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        if (_db.Database.GetPendingMigrations().Count() > 0)
+        {
+            _db.Database.Migrate();
+        }
+    }
+}
