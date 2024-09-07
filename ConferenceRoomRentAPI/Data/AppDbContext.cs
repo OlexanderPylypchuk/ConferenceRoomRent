@@ -11,9 +11,23 @@ namespace ConferenceRoomRentAPI.Data
         {
             
         }
+        public DbSet<ConferenceRoomRent> ConferenceRoomRents { get; set; }
+        public DbSet<ConferenceRoom> ConferenceRooms { get; set; }
+        public DbSet<Utilities> Utilities { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
+            builder.Entity<ConferenceRoom>().HasData(new[]{
+                new ConferenceRoom() { Id=1,Name = "A", PeopleCapacity=50, PricePerHour=2000},
+                new ConferenceRoom() { Id=2,Name="B", PeopleCapacity=100, PricePerHour=3500},
+                new ConferenceRoom() { Id=3,Name="C",PeopleCapacity=30, PricePerHour=1500}
+            });
+            builder.Entity<Utilities>().HasData(new[]
+            {
+                new Utilities() { Id=1, Name="Проєктор", Price=500},
+                new Utilities() { Id=2, Name="WiFi", Price=300},
+                new Utilities() { Id=3, Name="Звук", Price=700}
+            });
         }
     }
 }
