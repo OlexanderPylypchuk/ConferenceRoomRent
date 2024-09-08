@@ -11,6 +11,9 @@ namespace ConferenceRoomRentAPI.Models.Dtos
         [ForeignKey(nameof(ConferenceRoom))]
         public int ConferenceRoomId { get; set; }
         public ConferenceRoomDto ConferenceRoom { get; set;}
-        public List<Utilities> Utilities { get; set; }
+        public List<Utility> Utilities { get; set; }
+        [ForeignKey(nameof(User))]
+        public string UserId { get; set; }
+        public AppUser User { get; set; }
     }
 }

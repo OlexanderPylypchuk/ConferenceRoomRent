@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace ConferenceRoomRentAPI.Models
 {
@@ -11,6 +12,10 @@ namespace ConferenceRoomRentAPI.Models
         [ForeignKey(nameof(ConferenceRoom))]
         public int ConferenceRoomId { get; set; }
         public ConferenceRoom ConferenceRoom { get; set;}
-        public List<Utilities> Utilities { get; set; }
+        public List<Utility> Utilities { get; set; }
+        [ForeignKey(nameof(User))]
+        public string UserId { get; set; }
+        [ValidateNever]
+        public AppUser User { get; set; }
     }
 }

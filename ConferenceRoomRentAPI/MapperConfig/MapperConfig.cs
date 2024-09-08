@@ -13,7 +13,7 @@ namespace ConferenceRoomRentAPI.MapperConfig
             {
                 config.CreateMap<ConferenceRoom, ConferenceRoomDto>().ReverseMap();
                 config.CreateMap<ConferenceRoomRent, ConferenceRoomRentDto>().ReverseMap();
-                config.CreateMap<Utilities, UtilitiesDto>().ReverseMap();
+                config.CreateMap<Utility, UtilitiesDto>().ReverseMap();
             });
             return mapping;
         }

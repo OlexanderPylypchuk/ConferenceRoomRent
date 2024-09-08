@@ -1,6 +1,6 @@
 ﻿namespace ConferenceRoomRentAPI.Models
 {
-    public class Utilities
+    public class Utility
     {
         public int Id { get; set; }
         public string Name { get; set; }
