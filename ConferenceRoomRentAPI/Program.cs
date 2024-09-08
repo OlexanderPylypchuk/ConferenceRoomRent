@@ -2,6 +2,10 @@ using AutoMapper;
 using ConferenceRoomRentAPI.Data;
 using ConferenceRoomRentAPI.MapperConfig;
 using ConferenceRoomRentAPI.Models;
+using ConferenceRoomRentAPI.Repository;
+using ConferenceRoomRentAPI.Repository.IRepository;
+using ConferenceRoomRentAPI.Service;
+using ConferenceRoomRentAPI.Service.IService;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -22,6 +26,14 @@ builder.Services.AddSwaggerGen();
 IMapper mapper = MapperConfig.RegisterMaps().CreateMapper();
 builder.Services.AddSingleton(mapper);
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
+builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("ApiSettings:JwtOptions"));
+
+builder.Services.AddScoped<IConferenceRoomRentRepository, ConferenceRoomRentRepository>();
+builder.Services.AddScoped<IConferenceRoomRepository, ConferenceRoomRepository>();
+builder.Services.AddScoped<IUtilityRepository, UtilityRepository>();
+builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 var app = builder.Build();
 
