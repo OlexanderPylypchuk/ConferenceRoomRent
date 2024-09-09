@@ -9,17 +9,17 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ConferenceRoomRentAPI.Controllers
 {
-    [Route("api/conferenceroom")]
+    [Route("api/rent")]
     [ApiController]
-    public class ConferenceRoomController : ControllerBase
+    public class RentController : ControllerBase
     {
+        private readonly IConferenceRoomRentRepository _conferenceRoomRentRepository;
         private readonly IMapper _mapper;
-        private readonly IConferenceRoomRepository _conferenceRoomRepository;
-        private readonly ResponceDto _responceDto;
-        public ConferenceRoomController(IMapper mapper, IConferenceRoomRepository conferenceRoomRepository)
+        private ResponceDto _responceDto;
+        public RentController(IMapper mapper, IConferenceRoomRentRepository conferenceRoomRentRepository)
         {
             _mapper = mapper;
-            _conferenceRoomRepository = conferenceRoomRepository;
+            _conferenceRoomRentRepository = conferenceRoomRentRepository;
             _responceDto = new ResponceDto();
         }
         [HttpGet("{id:int}")]
@@ -27,13 +27,13 @@ namespace ConferenceRoomRentAPI.Controllers
         {
             try
             {
-                var conferenceRoom = await _conferenceRoomRepository.GetAsync(u=>u.Id == id);
-                if(conferenceRoom == null)
+                var rent = await _conferenceRoomRentRepository.GetAsync(u=>u.Id == id);
+                if(rent == null)
                 {
                     throw new Exception("No such entity in database");
                 }
                 _responceDto.Success = true;
-                _responceDto.Result = _mapper.Map<ConferenceRoomDto>(conferenceRoom);
+                _responceDto.Result = _mapper.Map<ConferenceRoomRentDto>(rent);
             }
             catch (Exception ex)
             {
@@ -43,13 +43,13 @@ namespace ConferenceRoomRentAPI.Controllers
             return _responceDto;
         }
         [HttpGet]
-        public async Task<ResponceDto> Get([FromQuery]int pageSize=3, int pageNumber=1)
+        public async Task<ResponceDto> Get([FromQuery] int pageSize = 3, int pageNumber = 1)
         {
             try
             {
-                var list = await (await _conferenceRoomRepository.GetAllAsync(pageSize:pageSize, pageNumber:pageNumber)).ToListAsync();
+                var list = await (await _conferenceRoomRentRepository.GetAllAsync(pageSize: pageSize, pageNumber: pageNumber)).ToListAsync();
                 _responceDto.Success = true;
-                _responceDto.Result = _mapper.Map<List<ConferenceRoomDto>>(list);
+                _responceDto.Result = _mapper.Map<List<ConferenceRoomRentDto>>(list);
             }
             catch (Exception ex)
             {
@@ -59,14 +59,14 @@ namespace ConferenceRoomRentAPI.Controllers
             return _responceDto;
         }
         [HttpPost]
-        public async Task<ResponceDto> Create([FromBody]ConferenceRoomDto conferenceRoomDto)
+        public async Task<ResponceDto> Create([FromBody] ConferenceRoomRentDto rentDto)
         {
             try
             {
-                var conferenceRoom = _mapper.Map<ConferenceRoom>(conferenceRoomDto);
-                await _conferenceRoomRepository.CreateAsync(conferenceRoom);
+                var rent = _mapper.Map<ConferenceRoomRent>(rentDto);
+                await _conferenceRoomRentRepository.CreateAsync(rent);
                 _responceDto.Success = true;
-                _responceDto.Result = _mapper.Map<ConferenceRoomDto>(conferenceRoom);
+                _responceDto.Result = _mapper.Map<ConferenceRoomDto>(rent);
             }
             catch (Exception ex)
             {
@@ -76,14 +76,14 @@ namespace ConferenceRoomRentAPI.Controllers
             return _responceDto;
         }
         [HttpPut]
-        public async Task<ResponceDto> Update([FromBody]ConferenceRoomDto conferenceRoomDto)
+        public async Task<ResponceDto> Update([FromBody] ConferenceRoomRentDto rentDto)
         {
             try
             {
-                var conferenceRoom = _mapper.Map<ConferenceRoom>(conferenceRoomDto);
-                await _conferenceRoomRepository.UpdateAsync(conferenceRoom);
+                var rent = _mapper.Map<ConferenceRoomRent>(rentDto);
+                await _conferenceRoomRentRepository.UpdateAsync(rent);
                 _responceDto.Success = true;
-                _responceDto.Result = _mapper.Map<ConferenceRoomDto>(conferenceRoom);
+                _responceDto.Result = _mapper.Map<ConferenceRoomRentDto>(rent);
             }
             catch (Exception ex)
             {
@@ -97,8 +97,8 @@ namespace ConferenceRoomRentAPI.Controllers
         {
             try
             {
-                var conferenceRoom = await _conferenceRoomRepository.GetAsync(u=>u.Id == id);
-                await _conferenceRoomRepository.DeleteAsync(conferenceRoom);
+                var rent = await _conferenceRoomRentRepository.GetAsync(u => u.Id == id);
+                await _conferenceRoomRentRepository.DeleteAsync(rent);
                 _responceDto.Success = true;
             }
             catch (Exception ex)
