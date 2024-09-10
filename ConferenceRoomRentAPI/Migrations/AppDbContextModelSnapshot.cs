@@ -170,16 +170,13 @@ namespace ConferenceRoomRentAPI.Migrations
                     b.ToTable("ConferenceRoomRents");
                 });
 
-            modelBuilder.Entity("ConferenceRoomRentAPI.Models.Utilities", b =>
+            modelBuilder.Entity("ConferenceRoomRentAPI.Models.Utility", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int?>("ConferenceRoomRentId")
-                        .HasColumnType("int");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -189,8 +186,6 @@ namespace ConferenceRoomRentAPI.Migrations
                         .HasColumnType("float");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ConferenceRoomRentId");
 
                     b.ToTable("Utilities");
 
@@ -213,6 +208,21 @@ namespace ConferenceRoomRentAPI.Migrations
                             Name = "Звук",
                             Price = 700.0
                         });
+                });
+
+            modelBuilder.Entity("ConferenceRoomRentUtility", b =>
+                {
+                    b.Property<int>("ConferenceRoomRentId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UtilityId")
+                        .HasColumnType("int");
+
+                    b.HasKey("ConferenceRoomRentId", "UtilityId");
+
+                    b.HasIndex("UtilityId");
+
+                    b.ToTable("ConferenceRoomRentUtility");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -367,11 +377,19 @@ namespace ConferenceRoomRentAPI.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("ConferenceRoomRentAPI.Models.Utilities", b =>
+            modelBuilder.Entity("ConferenceRoomRentUtility", b =>
                 {
                     b.HasOne("ConferenceRoomRentAPI.Models.ConferenceRoomRent", null)
-                        .WithMany("Utilities")
-                        .HasForeignKey("ConferenceRoomRentId");
+                        .WithMany()
+                        .HasForeignKey("ConferenceRoomRentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ConferenceRoomRentAPI.Models.Utility", null)
+                        .WithMany()
+                        .HasForeignKey("UtilityId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -423,11 +441,6 @@ namespace ConferenceRoomRentAPI.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("ConferenceRoomRentAPI.Models.ConferenceRoomRent", b =>
-                {
-                    b.Navigation("Utilities");
                 });
 #pragma warning restore 612, 618
         }

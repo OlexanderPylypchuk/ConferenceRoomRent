@@ -1,25 +1,28 @@
-﻿using AutoMapper;
+﻿using System.IdentityModel.Tokens.Jwt;
+using AutoMapper;
 using ConferenceRoomRentAPI.Models;
 using ConferenceRoomRentAPI.Models.Dtos;
 using ConferenceRoomRentAPI.Repository;
 using ConferenceRoomRentAPI.Repository.IRepository;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace ConferenceRoomRentAPI.Controllers
 {
+    [Authorize]
     [Route("api/rent")]
     [ApiController]
     public class RentController : ControllerBase
     {
-        private readonly IConferenceRoomRentRepository _conferenceRoomRentRepository;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private ResponceDto _responceDto;
-        public RentController(IMapper mapper, IConferenceRoomRentRepository conferenceRoomRentRepository)
+        public RentController(IMapper mapper, IUnitOfWork unitOfWork)
         {
             _mapper = mapper;
-            _conferenceRoomRentRepository = conferenceRoomRentRepository;
+            _unitOfWork = unitOfWork;
             _responceDto = new ResponceDto();
         }
         [HttpGet("{id:int}")]
@@ -27,7 +30,7 @@ namespace ConferenceRoomRentAPI.Controllers
         {
             try
             {
-                var rent = await _conferenceRoomRentRepository.GetAsync(u=>u.Id == id);
+                var rent = await _unitOfWork.RentRepository.GetAsync(u=>u.Id == id, includeProperties: "Utilities,ConferenceRoom");
                 if(rent == null)
                 {
                     throw new Exception("No such entity in database");
@@ -47,7 +50,7 @@ namespace ConferenceRoomRentAPI.Controllers
         {
             try
             {
-                var list = await (await _conferenceRoomRentRepository.GetAllAsync(pageSize: pageSize, pageNumber: pageNumber)).ToListAsync();
+                var list = await (await _unitOfWork.RentRepository.GetAllAsync(includeProperties: "Utilities,ConferenceRoom",pageSize: pageSize, pageNumber: pageNumber)).ToListAsync();
                 _responceDto.Success = true;
                 _responceDto.Result = _mapper.Map<List<ConferenceRoomRentDto>>(list);
             }
@@ -64,9 +67,36 @@ namespace ConferenceRoomRentAPI.Controllers
             try
             {
                 var rent = _mapper.Map<ConferenceRoomRent>(rentDto);
-                await _conferenceRoomRentRepository.CreateAsync(rent);
+                rent.UserId = User.FindFirst(u => u.Type == SD.IdClaimName).Value;
+                if (rent.StartOfRent > rent.EndOfRent)
+                {
+                    throw new Exception("End of rent can not happen before start of rent");
+                }
+                var conferenceRoom = await _unitOfWork.ConferenceRoomRepository.GetAsync(u=>u.Id== rent.ConferenceRoomId);
+                if(conferenceRoom == null)
+                {
+                    throw new Exception("No record of conference room with such id");
+                }
+                rent.ConferenceRoom = conferenceRoom;
+                double time = (rentDto.EndOfRent - rentDto.StartOfRent).Hours + (rentDto.EndOfRent - rentDto.StartOfRent).Minutes / 60;
+                rent.FullPrice = conferenceRoom.PricePerHour * Math.Ceiling(time);
+                for (int i=0; i<rent.Utilities.Count; i++)
+                {
+                    var item = await _unitOfWork.UtilityRepository.GetAsync(u=>u.Id == rent.Utilities[i].Id);
+                    if(item != null)
+                    {
+                        rent.Utilities[i] = item;
+                        rent.FullPrice += item.Price;
+                    }
+                    else
+                    {
+                        rent.Utilities.RemoveAt(i);
+                        i--;
+                    }
+                }
+                await _unitOfWork.RentRepository.CreateAsync(rent);
                 _responceDto.Success = true;
-                _responceDto.Result = _mapper.Map<ConferenceRoomDto>(rent);
+                _responceDto.Result = _mapper.Map<ConferenceRoomRentDto>(rent);
             }
             catch (Exception ex)
             {
@@ -80,8 +110,49 @@ namespace ConferenceRoomRentAPI.Controllers
         {
             try
             {
-                var rent = _mapper.Map<ConferenceRoomRent>(rentDto);
-                await _conferenceRoomRentRepository.UpdateAsync(rent);
+                var rent = await _unitOfWork.RentRepository.GetAsync(r => r.Id == rentDto.Id, "Utilities");
+                if (rent == null)
+                {
+                    throw new Exception("ConferenceRoomRent not found.");
+                }
+
+                var currentUserId = User.FindFirst(u => u.Type == SD.IdClaimName)?.Value;
+                if (rent.UserId != currentUserId && !User.IsInRole(SD.RoleAdmin))
+                {
+                    throw new Exception("Access denied.");
+                }
+
+                if (rentDto.StartOfRent > rentDto.EndOfRent)
+                {
+                    throw new Exception("End of rent cannot occur before the start of rent.");
+                }
+
+                var conferenceRoom = await _unitOfWork.ConferenceRoomRepository.GetAsync(u => u.Id == rentDto.ConferenceRoomId);
+                if (conferenceRoom == null)
+                {
+                    throw new Exception("No record of conference room with the provided ID.");
+                }
+
+                rent.ConferenceRoomId = conferenceRoom.Id;
+                rent.StartOfRent = rentDto.StartOfRent;
+                rent.EndOfRent = rentDto.EndOfRent;
+                double time = (rentDto.EndOfRent - rentDto.StartOfRent).Hours + (rentDto.EndOfRent - rentDto.StartOfRent).Minutes/60;
+                rent.FullPrice = conferenceRoom.PricePerHour * Math.Ceiling(time);
+
+                rent.Utilities.Clear();
+
+                foreach (var utilityDto in rentDto.Utilities)
+                {
+                    var utility = await _unitOfWork.UtilityRepository.GetAsync(u=>u.Id==utilityDto.Id);
+                    if (utility != null)
+                    {
+                        rent.Utilities.Add(utility);
+                        rent.FullPrice += utility.Price;
+                    }
+                }
+
+                await _unitOfWork.RentRepository.UpdateAsync(rent);
+
                 _responceDto.Success = true;
                 _responceDto.Result = _mapper.Map<ConferenceRoomRentDto>(rent);
             }
@@ -97,8 +168,13 @@ namespace ConferenceRoomRentAPI.Controllers
         {
             try
             {
-                var rent = await _conferenceRoomRentRepository.GetAsync(u => u.Id == id);
-                await _conferenceRoomRentRepository.DeleteAsync(rent);
+                var rent = await _unitOfWork.RentRepository.GetAsync(u => u.Id == id);
+                var currentUserId = User.FindFirst(u => u.Type == SD.IdClaimName)?.Value;
+                if (rent.UserId != currentUserId && !User.IsInRole(SD.RoleAdmin))
+                {
+                    throw new Exception("Access denied.");
+                }
+                await _unitOfWork.RentRepository.DeleteAsync(rent);
                 _responceDto.Success = true;
             }
             catch (Exception ex)

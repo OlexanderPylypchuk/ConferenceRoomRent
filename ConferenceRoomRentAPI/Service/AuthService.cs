@@ -24,9 +24,9 @@ namespace ConferenceRoomRentAPI.Service
             var user = _db.Users.FirstOrDefault(u => u.UserName.ToLower() == email.ToLower());
             if (user != null)
             {
-                if (!_roleManager.RoleExistsAsync(role).GetAwaiter().GetResult())
+                if (!_roleManager.RoleExistsAsync(role.ToLower()).GetAwaiter().GetResult())
                 {
-                    await _roleManager.CreateAsync(new IdentityRole(role));
+                    await _roleManager.CreateAsync(new IdentityRole(role.ToLower()));
                 }
                 await _userManager.AddToRoleAsync(user, role);
                 return true;
@@ -78,7 +78,10 @@ namespace ConferenceRoomRentAPI.Service
                 var result = await _userManager.CreateAsync(appUser, registrationRequest.Password);
                 if (result.Succeeded)
                 {
-                    var user = _db.Users.Where(u => u.Email == registrationRequest.Email).FirstOrDefault();
+                    if (registrationRequest.Role != null)
+                    {
+                        await AssignRole(registrationRequest.Email,registrationRequest.Role);
+                    }
                     return "";
                 }
                 return result.Errors.FirstOrDefault().Description;

@@ -2,6 +2,7 @@
 using ConferenceRoomRentAPI.Models;
 using ConferenceRoomRentAPI.Models.Dtos;
 using ConferenceRoomRentAPI.Repository.IRepository;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -10,14 +11,15 @@ namespace ConferenceRoomRentAPI.Controllers
 {
     [Route("api/utilities")]
     [ApiController]
+    [Authorize]
     public class UtilityController : ControllerBase
     {
-        private readonly IUtilityRepository _utilityRepository;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private ResponceDto _responceDto;
-        public UtilityController(IUtilityRepository utilityRepository, IMapper mapper)
+        public UtilityController(IUnitOfWork unitOfWork, IMapper mapper)
         {
-            _utilityRepository = utilityRepository;
+            _unitOfWork = unitOfWork;
             _mapper = mapper;
             _responceDto = new ResponceDto();
         }
@@ -26,7 +28,7 @@ namespace ConferenceRoomRentAPI.Controllers
         {
             try
             {
-                var utility = await _utilityRepository.GetAsync(u => u.Id == id);
+                var utility = await _unitOfWork.UtilityRepository.GetAsync(u => u.Id == id);
                 if (utility == null)
                 {
                     throw new Exception("No such entity in database");
@@ -46,7 +48,7 @@ namespace ConferenceRoomRentAPI.Controllers
         {
             try
             {
-                var list = await (await _utilityRepository.GetAllAsync(pageSize: pageSize, pageNumber: pageNumber)).ToListAsync();
+                var list = await (await _unitOfWork.UtilityRepository.GetAllAsync(pageSize: pageSize, pageNumber: pageNumber)).ToListAsync();
                 _responceDto.Success = true;
                 _responceDto.Result = _mapper.Map<List<UtilityDto>>(list);
             }
@@ -58,12 +60,13 @@ namespace ConferenceRoomRentAPI.Controllers
             return _responceDto;
         }
         [HttpPost]
+        [Authorize(Roles = SD.RoleAdmin)]
         public async Task<ResponceDto> Create([FromBody] UtilityDto utilityDto)
         {
             try
             {
                 var utility = _mapper.Map<Utility>(utilityDto);
-                await _utilityRepository.CreateAsync(utility);
+                await _unitOfWork.UtilityRepository.CreateAsync(utility);
                 _responceDto.Success = true;
                 _responceDto.Result = _mapper.Map<UtilityDto>(utility);
             }
@@ -75,12 +78,13 @@ namespace ConferenceRoomRentAPI.Controllers
             return _responceDto;
         }
         [HttpPut]
+        [Authorize(Roles = SD.RoleAdmin)]
         public async Task<ResponceDto> Update([FromBody] UtilityDto utilityDto)
         {
             try
             {
                 var utility = _mapper.Map<Utility>(utilityDto);
-                await _utilityRepository.UpdateAsync(utility);
+                await _unitOfWork.UtilityRepository.UpdateAsync(utility);
                 _responceDto.Success = true;
                 _responceDto.Result = _mapper.Map<UtilityDto>(utility);
             }
@@ -92,16 +96,17 @@ namespace ConferenceRoomRentAPI.Controllers
             return _responceDto;
         }
         [HttpDelete("{id:int}")]
+        [Authorize(Roles = SD.RoleAdmin)]
         public async Task<ResponceDto> Delete(int id)
         {
             try
             {
-                var utility = await _utilityRepository.GetAsync(u=>u.Id == id);
+                var utility = await _unitOfWork.UtilityRepository.GetAsync(u=>u.Id == id);
                 if (utility == null)
                 {
                     throw new Exception("No such entity in database");
                 }
-                await _utilityRepository.DeleteAsync(utility);
+                await _unitOfWork.UtilityRepository.DeleteAsync(utility);
                 _responceDto.Success = true;
             }
             catch (Exception ex)

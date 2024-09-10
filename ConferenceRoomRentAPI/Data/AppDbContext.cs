@@ -1,4 +1,5 @@
-﻿using ConferenceRoomRentAPI.Models;
+﻿using System.Reflection.Emit;
+using ConferenceRoomRentAPI.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -28,6 +29,13 @@ namespace ConferenceRoomRentAPI.Data
                 new Utility() { Id=2, Name="WiFi", Price=300},
                 new Utility() { Id=3, Name="Звук", Price=700}
             });
+            builder.Entity<ConferenceRoomRent>()
+                .HasMany(cr => cr.Utilities)
+                .WithMany()
+                .UsingEntity<Dictionary<string, object>>(
+                    "ConferenceRoomRentUtility", 
+                    j => j.HasOne<Utility>().WithMany().HasForeignKey("UtilityId"),
+                    j => j.HasOne<ConferenceRoomRent>().WithMany().HasForeignKey("ConferenceRoomRentId"));
         }
     }
 }

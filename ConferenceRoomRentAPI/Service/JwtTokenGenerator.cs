@@ -21,7 +21,7 @@ namespace ConferenceRoomRentAPI.Service
 
             var claims = new List<Claim>
             {
-                new Claim(JwtRegisteredClaimNames.Sub, user.Id),
+                new Claim(SD.IdClaimName, user.Id),
                 new Claim(JwtRegisteredClaimNames.Name, user.Name),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email)
             };

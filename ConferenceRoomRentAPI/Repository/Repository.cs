@@ -26,7 +26,7 @@ namespace ConferenceRoomRentAPI.Repository
             await _db.SaveChangesAsync();
         }
 
-        public async Task<IQueryable<T>> GetAllAsync(Expression<Func<T, bool>> expression = null, int pageSize = 3, int pageNumber = 1)
+        public async Task<IQueryable<T>> GetAllAsync(Expression<Func<T, bool>> expression = null, string includeProperties = null, int pageSize = 3, int pageNumber = 1)
         {
             IQueryable<T> query = _dbSet;
             if (expression != null)
@@ -42,15 +42,31 @@ namespace ConferenceRoomRentAPI.Repository
                 }
                 query = query.Skip(pageSize * (pageNumber - 1)).Take(pageSize);
             }
+            //include props
+            if (!string.IsNullOrEmpty(includeProperties))
+            {
+                foreach (string include in includeProperties.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                {
+                    query = query.Include(include);
+                }
+            }
             return query;
         }
 
-        public async Task<T> GetAsync(Expression<Func<T, bool>> expression)
+        public async Task<T> GetAsync(Expression<Func<T, bool>> expression, string includeProperties = null)
         {
             IQueryable<T> query = _dbSet;
             if(expression != null)
             {
                 query=query.Where(expression);
+            }
+            //include props
+            if (!string.IsNullOrEmpty(includeProperties))
+            {
+                foreach (string include in includeProperties.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                {
+                    query = query.Include(include);
+                }
             }
             return await query.FirstOrDefaultAsync();
         }

@@ -58,15 +58,13 @@ builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("ApiSettings:JwtOptions"));
 
-builder.Services.AddScoped<IConferenceRoomRentRepository, ConferenceRoomRentRepository>();
-builder.Services.AddScoped<IConferenceRoomRepository, ConferenceRoomRepository>();
-builder.Services.AddScoped<IUtilityRepository, UtilityRepository>();
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
-var secret = builder.Configuration.GetValue<string>("ApiSettings:Secret");
-var issuer = builder.Configuration.GetValue<string>("ApiSettings:Issuer");
-var audience = builder.Configuration.GetValue<string>("ApiSettings:Audience");
+var secret = builder.Configuration.GetValue<string>("ApiSettings:JwtOptions:Key");
+var issuer = builder.Configuration.GetValue<string>("ApiSettings:JwtOptions:Issuer");
+var audience = builder.Configuration.GetValue<string>("ApiSettings:JwtOptions:Audience");
 
 var key = Encoding.ASCII.GetBytes(secret);
 

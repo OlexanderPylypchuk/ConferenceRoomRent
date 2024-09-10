@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ConferenceRoomRentAPI.Migrations
 {
     /// <inheritdoc />
-    public partial class InitSeedDb : Migration
+    public partial class FixMigrations : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -66,6 +66,20 @@ namespace ConferenceRoomRentAPI.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_ConferenceRooms", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Utilities",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Price = table.Column<double>(type: "float", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Utilities", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -183,11 +197,18 @@ namespace ConferenceRoomRentAPI.Migrations
                     FullPrice = table.Column<double>(type: "float", nullable: false),
                     StartOfRent = table.Column<DateTime>(type: "datetime2", nullable: false),
                     EndOfRent = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ConferenceRoomId = table.Column<int>(type: "int", nullable: false)
+                    ConferenceRoomId = table.Column<int>(type: "int", nullable: false),
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_ConferenceRoomRents", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ConferenceRoomRents_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_ConferenceRoomRents_ConferenceRooms_ConferenceRoomId",
                         column: x => x.ConferenceRoomId,
@@ -197,23 +218,27 @@ namespace ConferenceRoomRentAPI.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Utilities",
+                name: "ConferenceRoomRentUtility",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Price = table.Column<double>(type: "float", nullable: false),
-                    ConferenceRoomRentId = table.Column<int>(type: "int", nullable: true)
+                    ConferenceRoomRentId = table.Column<int>(type: "int", nullable: false),
+                    UtilityId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Utilities", x => x.Id);
+                    table.PrimaryKey("PK_ConferenceRoomRentUtility", x => new { x.ConferenceRoomRentId, x.UtilityId });
                     table.ForeignKey(
-                        name: "FK_Utilities_ConferenceRoomRents_ConferenceRoomRentId",
+                        name: "FK_ConferenceRoomRentUtility_ConferenceRoomRents_ConferenceRoomRentId",
                         column: x => x.ConferenceRoomRentId,
                         principalTable: "ConferenceRoomRents",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ConferenceRoomRentUtility_Utilities_UtilityId",
+                        column: x => x.UtilityId,
+                        principalTable: "Utilities",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.InsertData(
@@ -228,12 +253,12 @@ namespace ConferenceRoomRentAPI.Migrations
 
             migrationBuilder.InsertData(
                 table: "Utilities",
-                columns: new[] { "Id", "ConferenceRoomRentId", "Name", "Price" },
+                columns: new[] { "Id", "Name", "Price" },
                 values: new object[,]
                 {
-                    { 1, null, "Проєктор", 500.0 },
-                    { 2, null, "WiFi", 300.0 },
-                    { 3, null, "Звук", 700.0 }
+                    { 1, "Проєктор", 500.0 },
+                    { 2, "WiFi", 300.0 },
+                    { 3, "Звук", 700.0 }
                 });
 
             migrationBuilder.CreateIndex(
@@ -281,9 +306,14 @@ namespace ConferenceRoomRentAPI.Migrations
                 column: "ConferenceRoomId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Utilities_ConferenceRoomRentId",
-                table: "Utilities",
-                column: "ConferenceRoomRentId");
+                name: "IX_ConferenceRoomRents_UserId",
+                table: "ConferenceRoomRents",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ConferenceRoomRentUtility_UtilityId",
+                table: "ConferenceRoomRentUtility",
+                column: "UtilityId");
         }
 
         /// <inheritdoc />
@@ -305,16 +335,19 @@ namespace ConferenceRoomRentAPI.Migrations
                 name: "AspNetUserTokens");
 
             migrationBuilder.DropTable(
-                name: "Utilities");
+                name: "ConferenceRoomRentUtility");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");
 
             migrationBuilder.DropTable(
-                name: "AspNetUsers");
+                name: "ConferenceRoomRents");
 
             migrationBuilder.DropTable(
-                name: "ConferenceRoomRents");
+                name: "Utilities");
+
+            migrationBuilder.DropTable(
+                name: "AspNetUsers");
 
             migrationBuilder.DropTable(
                 name: "ConferenceRooms");
