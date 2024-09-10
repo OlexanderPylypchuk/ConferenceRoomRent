@@ -50,7 +50,9 @@ namespace ConferenceRoomRentAPI.Controllers
         {
             try
             {
-                var list = await (await _unitOfWork.RentRepository.GetAllAsync(includeProperties: "Utilities,ConferenceRoom",pageSize: pageSize, pageNumber: pageNumber)).ToListAsync();
+                var list = await (await _unitOfWork.RentRepository
+                    .GetAllAsync(includeProperties: "Utilities,ConferenceRoom",pageSize: pageSize, pageNumber: pageNumber))
+                    .ToListAsync();
                 _responceDto.Success = true;
                 _responceDto.Result = _mapper.Map<List<ConferenceRoomRentDto>>(list);
             }
@@ -68,7 +70,7 @@ namespace ConferenceRoomRentAPI.Controllers
             {
                 var rent = _mapper.Map<ConferenceRoomRent>(rentDto);
                 rent.UserId = User.FindFirst(u => u.Type == SD.IdClaimName).Value;
-                if (rent.StartOfRent > rent.EndOfRent)
+                if (rent.StartOfRent >= rent.EndOfRent)
                 {
                     throw new Exception("End of rent can not happen before start of rent");
                 }
@@ -122,7 +124,7 @@ namespace ConferenceRoomRentAPI.Controllers
                     throw new Exception("Access denied.");
                 }
 
-                if (rentDto.StartOfRent > rentDto.EndOfRent)
+                if (rentDto.StartOfRent >= rentDto.EndOfRent)
                 {
                     throw new Exception("End of rent cannot occur before the start of rent.");
                 }

@@ -46,13 +46,22 @@ namespace ConferenceRoomRentAPI.Controllers
             return _responceDto;
         }
         [HttpGet]
-        public async Task<ResponceDto> Get([FromQuery]int pageSize=3, int pageNumber=1)
+        public async Task<ResponceDto> Get([FromQuery]int pageSize=3, int pageNumber=1, DateTime? dateTime=null, int? capacity=null)
         {
             try
             {
-                var list = await (await _unitOfWork.ConferenceRoomRepository.GetAllAsync(pageSize:pageSize, pageNumber:pageNumber)).ToListAsync();
+                var query = await _unitOfWork.ConferenceRoomRepository.GetAllAsync(pageSize: pageSize, pageNumber: pageNumber);
+                if (capacity != null)
+                {
+                    query = query.Where(u=>u.PeopleCapacity == capacity);
+                }
+                if(dateTime != null)
+                {
+                    var rents = await _unitOfWork.RentRepository.GetAllAsync(u=>u.StartOfRent.AddMinutes(-30)<=dateTime&&u.EndOfRent>=dateTime.Value.AddMinutes(30));
+                    query = query.Where(u=>!rents.Any(rent=>rent.ConferenceRoomId==u.Id));
+                }
                 _responceDto.Success = true;
-                _responceDto.Result = _mapper.Map<List<ConferenceRoomDto>>(list);
+                _responceDto.Result = _mapper.Map<List<ConferenceRoomDto>>(await query.ToListAsync());
             }
             catch (Exception ex)
             {
