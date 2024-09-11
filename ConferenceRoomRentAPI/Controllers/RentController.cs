@@ -80,8 +80,8 @@ namespace ConferenceRoomRentAPI.Controllers
                     throw new Exception("No record of conference room with such id");
                 }
                 rent.ConferenceRoom = conferenceRoom;
-                double time = (rentDto.EndOfRent - rentDto.StartOfRent).Hours + (rentDto.EndOfRent - rentDto.StartOfRent).Minutes / 60;
-                rent.FullPrice = conferenceRoom.PricePerHour * Math.Ceiling(time);
+                rent.FullPrice = TotalPriceCalculation(rent.StartOfRent, rent.EndOfRent, conferenceRoom.PricePerHour);
+
                 for (int i=0; i<rent.Utilities.Count; i++)
                 {
                     var item = await _unitOfWork.UtilityRepository.GetAsync(u=>u.Id == rent.Utilities[i].Id);
@@ -96,6 +96,7 @@ namespace ConferenceRoomRentAPI.Controllers
                         i--;
                     }
                 }
+
                 await _unitOfWork.RentRepository.CreateAsync(rent);
                 _responceDto.Success = true;
                 _responceDto.Result = _mapper.Map<ConferenceRoomRentDto>(rent);
@@ -138,8 +139,7 @@ namespace ConferenceRoomRentAPI.Controllers
                 rent.ConferenceRoomId = conferenceRoom.Id;
                 rent.StartOfRent = rentDto.StartOfRent;
                 rent.EndOfRent = rentDto.EndOfRent;
-                double time = (rentDto.EndOfRent - rentDto.StartOfRent).Hours + (rentDto.EndOfRent - rentDto.StartOfRent).Minutes/60;
-                rent.FullPrice = conferenceRoom.PricePerHour * Math.Ceiling(time);
+                rent.FullPrice = TotalPriceCalculation(rent.StartOfRent, rent.EndOfRent, conferenceRoom.PricePerHour);
 
                 rent.Utilities.Clear();
 
@@ -164,6 +164,43 @@ namespace ConferenceRoomRentAPI.Controllers
                 _responceDto.Message = ex.Message;
             }
             return _responceDto;
+        }
+        private double TotalPriceCalculation(DateTime start, DateTime end, double pricePerHour)
+        {
+            double total = 0;
+
+            while (start < end)
+            {
+                double currentHourPrice = pricePerHour;
+
+                // Стандартні години (з 09:00 до 18:00): базова вартість
+                if (start.Hour >= 9 && start.Hour < 18)
+                {
+                    currentHourPrice = pricePerHour;
+                }
+                // Вечірні години (з 18:00 до 23:00): знижка 20%
+                else if (start.Hour >= 18 && start.Hour < 23)
+                {
+                    currentHourPrice = pricePerHour * 0.8;
+                }
+                // Ранкові години (з 06:00 до 09:00): знижка 10%
+                else if (start.Hour >= 6 && start.Hour < 9)
+                {
+                    currentHourPrice = pricePerHour * 0.9;
+                }
+                // Пікові години (з 12:00 до 14:00): націнка 15%
+                else if (start.Hour >= 12 && start.Hour < 14)
+                {
+                    currentHourPrice = pricePerHour * 1.15;
+                }
+
+                total += currentHourPrice;
+
+                // Переходимо до наступної години
+                start = start.AddHours(1);
+            }
+
+            return total;
         }
         [HttpDelete("{id:int}")]
         public async Task<ResponceDto> Delete(int id)

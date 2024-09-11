@@ -25,7 +25,7 @@ namespace ConferenceRoomRentAPI.Service
                 new Claim(JwtRegisteredClaimNames.Name, user.Name),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email)
             };
-
+            claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
             var secret = Encoding.ASCII.GetBytes(_jwtOptions.Key);
 
             var descriptor = new SecurityTokenDescriptor()
